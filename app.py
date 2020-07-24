@@ -69,7 +69,7 @@ def spell_check():
             misspelled = misspelled.replace('\n', ',').strip(',')
             spell_check_record = SpellCheckRecord(user_id=user.id, inputtext=inputtext, misspelled=misspelled)
             db.session.add(spell_check_record)
-            db.commit()
+            db.session.commit()
         else:
             textout = "Invalid user. Please log in."
     response = make_response(render_template('spell_check.html', textout=textout, misspelled=misspelled))
@@ -105,7 +105,7 @@ def login():
                 session['user_id'] = user.id
                 login = LoginRecord(user_id=user.id, login_time=datetime.utcnow())
                 db.session.add(login)
-                db.commit()
+                db.session.commit()
     response = make_response(render_template('login.html', error=error))
     return response
 
