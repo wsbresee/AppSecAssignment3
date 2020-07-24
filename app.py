@@ -6,6 +6,7 @@ import os
 INPUTTEXT_ADDR = 'input.txt'
 DICTIONARY_ADDR = 'wordlist.txt'
 SECRET_KEY = os.urandom(32)
+DATABASE_FILE = "database.db"
 
 class User:
     def __init__(self, username, password, phone):
@@ -23,7 +24,24 @@ def get_user(the_user):
 
 app = Flask(__name__)
 app.secret_key = os.urandom(32)
+app.config.update(SQLALCHEMY_DATABASE_URI = DATABASE_FILE)
 csrf = CSRFProtect(app)
+db = SQLAlchemy(app)
+
+class UserRecord(db.Model):
+    __tablename__ = "user_records"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(64))
+    password = db.Column(db.String(64))
+    phone = db.Column(db.String(64))
+
+class LoginRecord(db.Model):
+    __tablename__ = "login_records"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+class SpellCheckRecord(db.Model):
+    __tablename__ = "spell_check_records"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
 @app.route('/')
 def index():
