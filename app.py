@@ -124,7 +124,7 @@ def register():
             error = 'invalid phone'
         else:
             if not getUser(username):
-                user = UserRecord(username=username, password=password, phone=phone)
+                user = UserRecord(username=username, password=sha256_crypt.hash(password), phone=phone)
                 db.session.add(user)
                 db.session.commit()
                 error = 'success'
