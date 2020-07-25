@@ -36,11 +36,12 @@ class LoginRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(64))
     login_time = db.Column(db.DateTime)
+    logout_time = db.Column(db.DateTime)
 
 class SpellCheckRecord(db.Model):
     __tablename__ = "spell_check_records"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer)
+    username = db.Column(db.String(64))
     inputtext = db.Column(db.String(64))
     misspelled = db.Column(db.String(64))
 
@@ -48,7 +49,7 @@ db.create_all()
 
 @app.route('/')
 def index():
-    return redirect(url_for('register'))
+    return redirect('register')
 
 @app.route('/spell_check', methods=['GET', 'POST'])
 def spell_check():
@@ -101,10 +102,8 @@ def login():
             else:
                 error = 'success'
                 session['username'] = username
-                session['password'] = password
-                session['phone'] = phone
                 session['user_id'] = user.id
-                login = LoginRecord(user_id=user.id, login_time=datetime.utcnow())
+                login = LoginRecord(username=username, login_time=datetime.utcnow())
                 db.session.add(login)
                 db.session.commit()
     response = make_response(render_template('login.html', error=error))
@@ -134,29 +133,56 @@ def register():
     response = make_response(render_template('register.html', error=error))
     return response
 
-@app.route('/history')
+@app.route('/history', methods=['GET', 'POST'])
 def history():
+    admin = False
     if 'username' in session:
-        user = getUser(session['username'])
+        username = session['username']
+        user = getUser(username)
         if not user:
-            return redirect(url_for('login'))
+            return login()
+        if username == 'admin':
+            admin = True
     else:
-        return redirect(url_for('login'))
-    if username == 'admin':
+        return login()
+    if (request.method == 'POST') and admin:
+        userquery = request.form['userquery']
+        spell_check_records = SpellCheckRecord.query.filter_by(username=userquery).order_by(SpellCheckRecord.id)
+    elif admin:
         spell_check_records = SpellCheckRecord.query.order_by(SpellCheckRecord.id)
     else:
         spell_check_records = SpellCheckRecord.query.filter_by(username=user.username).order_by(SpellCheckRecord.id)
     records_as_html = ''
+    number_of_records = 0
     for record in spell_check_records:
-        html_representation = '<p id=queryid>' + record.id + '</p>\n'
-        html_representation += '<p id=username>' + record.username + '</p>\n'
-        html_representation += '<p id=querytext>' + record.inputtext + '</p>\n'
-        html_representation += '<p id=queryresults>' + record.misspelled + '</p>\n'
-        records_as_html += html_representation
-    history_records = open('history_records.html', 'w')
+        number_of_records += 1
+    history_records = open('templates/history_records.html', 'w')
     history_records.write(records_as_html)
     history_records.close()
-    response = make_response(render_template('history.html'))
+    response = make_response(render_template('history.html', records=spell_check_records, number_of_records=number_of_records, admin=admin))
+    return response
+
+@app.route('/history/query<int:id>')
+def query(id):
+    if 'username' in session:
+        username = session['username']
+        user = getUser(username)
+        record = SpellCheckRecord.query.filter_by(id=id).first()
+        if username == 'admin' or record.username == username:
+            response = make_response(render_template('record_by_id.html', id=id, username=record.username, inputtext=record.inputtext, misspelled=record.misspelled))
+            return response
+    return login()
+
+@app.route('/login_history', methods=['GET', 'POST'])
+def login_history():
+    records = {}
+    admin = False
+    if 'username' in session and session['username'] == 'admin':
+        admin = True
+    if request.method == 'POST' and admin:
+        userid = request.form['userid']
+        records = LoginRecord.query.filter_by(username=userid).order_by(LoginRecord.id)
+    response = make_response(render_template('login_history.html', admin=admin, records=records))
     return response
 
 if (__name__ == '__main__'):
