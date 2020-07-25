@@ -155,7 +155,7 @@ def history():
     history_records = open('history_records.html', 'w')
     history_records.write(records_as_html)
     history_records.close()
-    response = make_response(render_template('history.html')
+    response = make_response(render_template('history.html'))
     return response
 
 if (__name__ == '__main__'):
