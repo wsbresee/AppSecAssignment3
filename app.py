@@ -133,7 +133,7 @@ def register():
     response = make_response(render_template('register.html', error=error))
     return response
 
-@app.route('/history', methods['GET', 'POST'])
+@app.route('/history')
 def history():
     if 'username' in session:
         user = getUser(session['username'])
