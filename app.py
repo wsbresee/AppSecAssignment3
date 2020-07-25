@@ -6,6 +6,7 @@ from passlib.hash import sha256_crypt
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
+
 INPUTTEXT_ADDR = 'input.txt'
 DICTIONARY_ADDR = 'wordlist.txt'
 SECRET_KEY = os.urandom(32)
