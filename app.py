@@ -33,7 +33,7 @@ class UserRecord(db.Model):
 class LoginRecord(db.Model):
     __tablename__ = "login_records"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer)
+    username = db.Column(db.String(64))
     login_time = db.Column(db.DateTime)
 
 class SpellCheckRecord(db.Model):
@@ -67,7 +67,7 @@ def spell_check():
             textout=inputtext
             misspelled = check_output(['./a.out', INPUTTEXT_ADDR, DICTIONARY_ADDR]).decode('utf-8')
             misspelled = misspelled.replace('\n', ',').strip(',')
-            spell_check_record = SpellCheckRecord(user_id=user.id, inputtext=inputtext, misspelled=misspelled)
+            spell_check_record = SpellCheckRecord(username=user.username, inputtext=inputtext, misspelled=misspelled)
             db.session.add(spell_check_record)
             db.session.commit()
         else:
@@ -131,6 +131,31 @@ def register():
             else:
                 error = 'failure'
     response = make_response(render_template('register.html', error=error))
+    return response
+
+@app.route('/history', methods['GET', 'POST'])
+def history():
+    if 'username' in session:
+        user = getUser(session['username'])
+        if not user:
+            return redirect(url_for('login'))
+    else:
+        return redirect(url_for('login'))
+    if username == 'admin':
+        spell_check_records = SpellCheckRecord.query.order_by(SpellCheckRecord.id)
+    else:
+        spell_check_records = SpellCheckRecord.query.filter_by(username=user.username).order_by(SpellCheckRecord.id)
+    records_as_html = ''
+    for record in spell_check_records:
+        html_representation = '<p id=queryid>' + record.id + '</p>\n'
+        html_representation += '<p id=username>' + record.username + '</p>\n'
+        html_representation += '<p id=querytext>' + record.inputtext + '</p>\n'
+        html_representation += '<p id=queryresults>' + record.misspelled + '</p>\n'
+        records_as_html += html_representation
+    history_records = open('history_records.html', 'w')
+    history_records.write(records_as_html)
+    history_records.close()
+    response = make_response(render_template('history.html')
     return response
 
 if (__name__ == '__main__'):
